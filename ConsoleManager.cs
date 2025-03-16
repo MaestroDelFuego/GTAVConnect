@@ -32,7 +32,7 @@ public static class ConsoleManager
             _consoleAllocated = true;
             Console.Title = "Client Console";
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("Console initialized.");
+            Log("Console initialized.", LogLevel.DEBUG);
             Console.ResetColor();
         }
     }
