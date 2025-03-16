@@ -17,6 +17,12 @@ app.listen(3000, () => {
     console.log(`Server is running at http://localhost:3000`);
 });
 
+// Clear the log and print new logs
+function clearLogAndPrint(message) {
+    console.clear(); // Clear the console
+    console.log(message); // Log the message
+}
+
 wss.on('connection', (ws) => {
     const playerID = Math.random().toString(36).substring(2, 15);
     players[playerID] = {
@@ -29,23 +35,34 @@ wss.on('connection', (ws) => {
         firstPlayerID = playerID;
     }
 
+    clearLogAndPrint(`New connection established. Player ID: ${playerID}`);
+    console.log('Players:', players);
+
     ws.on('message', (message) => {
         let msg = JSON.parse(message);
 
-        if (msg.type === 'username') {
-            players[playerID].username = msg.username;
-            console.log(`${msg.username} has joined the server`);
-            broadcastJoinLeave(playerID, 'joined');
-            broadcastPlayerData();
-        } else if (msg.type === 'update') {
-            players[msg.playerID] = msg.data;
-            broadcastPlayerData();
-        } else if (msg.type === 'create_entity' && playerID === firstPlayerID) {
-            createEntity(msg.data);
-        } else if (msg.type === 'update_entity' && playerID === firstPlayerID) {
-            updateEntity(msg.entityID, msg.data);
-        } else if (msg.type === 'delete_entity' && playerID === firstPlayerID) {
-            deleteEntity(msg.entityID);
+        try {
+            if (msg.type === 'username') {
+                players[playerID].username = msg.username;
+                console.log(`${msg.username} has joined the server`);
+                broadcastJoinLeave(playerID, 'joined');
+                broadcastPlayerData();
+            } else if (msg.type === 'update') {
+                players[msg.playerID] = msg.data;
+                console.log(`Player ${msg.playerID} updated:`, msg.data);
+                broadcastPlayerData();
+            } else if (msg.type === 'create_entity' && playerID === firstPlayerID) {
+                const entityID = createEntity(msg.data);
+                console.log(`Entity created: ${entityID}`);
+            } else if (msg.type === 'update_entity' && playerID === firstPlayerID) {
+                updateEntity(msg.entityID, msg.data);
+                console.log(`Entity updated: ${msg.entityID}`);
+            } else if (msg.type === 'delete_entity' && playerID === firstPlayerID) {
+                deleteEntity(msg.entityID);
+                console.log(`Entity deleted: ${msg.entityID}`);
+            }
+        } catch (error) {
+            console.error(`Error processing message: ${error.message}`);
         }
     });
 
@@ -60,6 +77,7 @@ wss.on('connection', (ws) => {
                 break;
             }
         }
+        console.log(`Player ${playerID} has disconnected.`);
     });
 
     ws.send(JSON.stringify({ type: 'welcome', players, entities, isFirstPlayer: playerID === firstPlayerID }));
